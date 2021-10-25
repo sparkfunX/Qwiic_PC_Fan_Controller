@@ -145,7 +145,7 @@ void loop()
     // the PWM Width according to the contents of PROPORTIONAL_THROTTLE
     // if not, compute the output of the PI controller from the
     // contents of SETPOINT_RPM
-    if (PI_LOOP_DISABLE == 0xFF)
+    if (registerMap[PI_LOOP_DISABLE] == 0xFF)
     {
         pwmWidth(map(registerMap[PROPORTIONAL_THROTTLE], 0, 100, 0, 320));
     }
