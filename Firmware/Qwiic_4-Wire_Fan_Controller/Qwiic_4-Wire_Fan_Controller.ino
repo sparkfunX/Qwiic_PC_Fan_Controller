@@ -9,10 +9,10 @@
  * correct hardware configuration below before 
  * programming!
 ****************************************************/
-//#define QWIIC_4_WIRE_FAN_CONTROLLER // SPX-XXXXX
-#define QWIIC_BLOWER // SPX-XXXXX
+//#define QWIIC_PC_FAN_CONTROLLER // SPX-18570
+#define QWIIC_BLOWER // SPX-18561
 
-#ifdef QWIIC_4_WIRE_FAN_CONTROLLER
+#ifdef QWIIC_PC_FAN_CONTROLLER
 #define TRIM_DISABLE_DEFAULT 0x00
 #endif
 #ifdef QWIIC_BLOWER
@@ -67,10 +67,10 @@ uint8_t registerMap[0x11] =
         0x00,                   // FAN_ENABLE
         0x00,                   // SETPOINT_RPM
         0x00,                   // SETPOINT_RPM BYTE 2
-        0,                      // KP_VALUE (70 interpreted as 0.70)
-        60,                     // KP_VALUE BYTE 2 
-        0,                      // KP_VALUE (150 interpreted as 1.50)
-        30,                     // KP_VALUE BYTE 2
+        0,                      // KP_VALUE (70 interpreted as 2.50)
+        250,                     // KP_VALUE BYTE 2 
+        1,                      // KP_VALUE (390 interpreted as 3.90)
+        134,                     // KP_VALUE BYTE 2
         2,                   // FAN_TACH_DIVIDER (2 pulses per rotation)
         0x00,                   // FAN_ACTUAL_RPM 
         0x00,                   // FAN_ACTUAL_RPM BYTE 2
@@ -109,13 +109,11 @@ void setup()
 
     // Start the PI Controller
     piController.begin();
-    piController.limit(0, 320); // Limit the PI output to prevent integral windup
+    piController.limit(20, 320); // Limit the PI output to prevent integral windup
 }
 
 void loop()
 {
-    delay(200);
-
     // Get the tachometer reading, turn it into a real RPM using the value from
     // FAN_TACH_DIVIDER, and stuff it into FAN_ACTUAL_RPM for the I²C controller
     // to query and for the PI controller to compute against.
@@ -192,10 +190,23 @@ void piUpdate()
     tachReading += registerMap[FAN_ACTUAL_RPM] << 8;
     tachReading += registerMap[FAN_ACTUAL_RPM + 0x01];
 
-    // Update the PI Controller
-    piController.setpoint(setpoint);
-    piController.tune(proportional, integral, 0);
-    piOutput = piController.compute(tachReading);
+    // PC Fans tend to have a dead zone at the low end, so we limit the PI controller
+    // to the range above this dead zone (to prevent stalling the fan and setting up
+    // an oscillation) This does mean, however, that the PI controller will never 
+    // organically output a 0, so if the fan speed is set to 0 we need to override the
+    // PI controller
+    if(setpoint !=0){
+
+      // Update the PI Controller
+      piController.setpoint(setpoint);
+      piController.tune(proportional, integral, 0);
+      piOutput = piController.compute(tachReading);
+
+    }else{
+
+      piOutput = 0;
+      
+    }
 
     // Update the PI_OUT register entry
     registerMap[PI_OUT] = piOutput >> 8;
