@@ -32,7 +32,7 @@
 
 /* REGISTER MAP */
 #define WIRE_ADDR 0x00             // Device Address
-#define FAN_ENABLE 0x01            // Enable power to fan VCC pin (0xFF to enable)
+#define FAN_ENABLE 0x01            // Enable power to fan VCC pin (0xFF to disable)
 #define SETPOINT_RPM 0x02          // PI Controller setpoint in RPM (2 bytes unsigned integer)
 #define KP_VALUE 0x04              // PI Controller Proportional Term (2 bytes signed fixed decimal) \
                                    // Setting this parameter from the I²C Controller overrides the onboard trimpot
@@ -67,7 +67,7 @@ uint8_t registerMap[0x11] =
         0x00,                   // FAN_ENABLE
         0x00,                   // SETPOINT_RPM
         0x00,                   // SETPOINT_RPM BYTE 2
-        0,                      // KP_VALUE (70 interpreted as 2.50)
+        0,                      // KP_VALUE (250 interpreted as 2.50)
         250,                     // KP_VALUE BYTE 2 
         1,                      // KP_VALUE (390 interpreted as 3.90)
         134,                     // KP_VALUE BYTE 2
