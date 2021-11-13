@@ -6308,7 +6308,6 @@ diode. </text>
 <wire x1="74.676" y1="99.06" x2="72.136" y2="96.52" width="0.1524" layer="97"/>
 <wire x1="72.136" y1="96.52" x2="72.136" y2="99.06" width="0.1524" layer="97"/>
 <wire x1="74.676" y1="99.06" x2="81.28" y2="99.06" width="0.1524" layer="97"/>
-<text x="73.66" y="109.22" size="2.54" layer="94" font="vector" align="center">Power Rail Protection</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>

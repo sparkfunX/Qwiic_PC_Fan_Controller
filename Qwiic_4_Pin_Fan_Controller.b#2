@@ -192,7 +192,7 @@
 <wire x1="45.72" y1="25.4" x2="0" y2="25.4" width="0.254" layer="20"/>
 <wire x1="45.72" y1="25.4" x2="45.72" y2="0" width="0.254" layer="20"/>
 <wire x1="0" y1="0" x2="0" y2="25.4" width="0.254" layer="20"/>
-<text x="0.381" y="4.318" size="1.778" layer="16" font="vector" ratio="15" rot="SMR90">x02</text>
+<text x="0.381" y="8.382" size="1.778" layer="1" font="vector" ratio="15" rot="SR270">x01</text>
 <polygon width="0.254" layer="21">
 <vertex x="7.239" y="24.765"/>
 <vertex x="5.969" y="24.765"/>

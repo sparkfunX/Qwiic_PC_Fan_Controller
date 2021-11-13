@@ -9,8 +9,8 @@
  * correct hardware configuration below before 
  * programming!
 ****************************************************/
-//#define QWIIC_PC_FAN_CONTROLLER // SPX-18570
-#define QWIIC_BLOWER // SPX-18561
+#define QWIIC_PC_FAN_CONTROLLER // SPX-18570
+//#define QWIIC_BLOWER // SPX-18561
 
 #ifdef QWIIC_PC_FAN_CONTROLLER
 #define TRIM_DISABLE_DEFAULT 0x00
