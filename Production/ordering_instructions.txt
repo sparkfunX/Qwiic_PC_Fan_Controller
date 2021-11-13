@@ -1,11 +1,11 @@
-panel size, 152x143mm
+panel size, 106x117mm
 PCB thickness, 1.6mm
 number of layers, 2
 soldermask color, Black
 silkscreen color, White
 oz copper, 1oz
 finish, HASL lead free
-stencils, top
-pcs per panel, 15
+stencils, none
+pcs per panel, 8
 min trace width, 0.2032mm / 0.0080in
 min drill size, 0.3000mm / 0.0118in
