@@ -32,7 +32,7 @@
 
 /* REGISTER MAP */
 #define WIRE_ADDR 0x00             // Device Address
-#define FAN_ENABLE 0x01            // Enable power to fan VCC pin (0xFF to disable)
+#define FAN_ENABLE 0x01            // Enable power to fan VCC pin (0xFF to enable)
 #define SETPOINT_RPM 0x02          // PI Controller setpoint in RPM (2 bytes unsigned integer)
 #define KP_VALUE 0x04              // PI Controller Proportional Term (2 bytes signed fixed decimal) \
                                    // Setting this parameter from the I²C Controller overrides the onboard trimpot
@@ -47,6 +47,7 @@
                                    // Whem PI Controller is Disabled the PWM Width Cycle is set to this register's inverse
 #define TRIMMER_SCALE 0x0F         // Trimpot values are multiplied by this number. Probably only useful in edge cases. 2.0 (20) by default.
 #define TRIMMER_DISABLE 0x10       // Stop reading trimpot ADCs and only use values written to the Kx_VALUE register by the I²C Controller (0xFF for Disable)
+#define FW_VERSION 0x11            // Firmware version 
 
 /* EEPROM MAP */
 #define EEPROM_DEV_ADDR 0x00        // Because the I²C device address is user selectable, we need to remember it between boot cycles
@@ -61,13 +62,13 @@ uint8_t registerIndex = 0;                // Use this to track our position in t
  * SET THE REGISTER MAP DEFAULTS
  * These are the bus-accessible device registers
  * and their default values */
-uint8_t registerMap[0x11] = 
+uint8_t registerMap[0x12] = 
     {
         0x00,                   // WIRE_ADDR
         0x00,                   // FAN_ENABLE
         0x00,                   // SETPOINT_RPM
         0x00,                   // SETPOINT_RPM BYTE 2
-        0,                      // KP_VALUE (250 interpreted as 2.50)
+        0,                      // KP_VALUE (70 interpreted as 2.50)
         250,                     // KP_VALUE BYTE 2 
         1,                      // KP_VALUE (390 interpreted as 3.90)
         134,                     // KP_VALUE BYTE 2
@@ -79,7 +80,8 @@ uint8_t registerMap[0x11] =
         0x00,                   // PI_LOOP_DISABLE (enabled)
         0x00,                   // PROPORTIONAL_THROTTLE
         20,                   // TRIMMER_SCALE (20 interpreted as 2.0)
-        TRIM_DISABLE_DEFAULT    // TRIMMER_DISABLE
+        TRIM_DISABLE_DEFAULT,    // TRIMMER_DISABLE
+        11                      // FIRMWARE VERSION 1.1
     };
 /****************************************************/
 
@@ -261,7 +263,7 @@ void updateSettings()
     // Check if the device address has been changed
     // Compare against global var wire_addr which is
     // unchanged since last Wire.begin() call
-    if (registerMap[WIRE_ADDR] != wire_addr)
+    if ((registerMap[WIRE_ADDR] != wire_addr) && registerMap[WIRE_ADDR] > 0x07 && registerMap[WIRE_ADDR] < 0x78)
     {
         wire_addr = registerMap[WIRE_ADDR];
         // store the I²C Address in EEPROM so it sticks around on reboot
@@ -271,6 +273,8 @@ void updateSettings()
         Wire.begin(wire_addr);
         Wire.onRequest(requestEvent);
         Wire.onReceive(receiveEvent);
+    }else{
+      registerMap[WIRE_ADDR] = wire_addr;
     }
 
     // The following are easy to evaluate and don't
@@ -326,8 +330,12 @@ void readTachometer()
     long rpm;  // RPM derived by (frequency / pulses per revolution) x 60
 
     tach = pulseIn(PIN_TACH_IN, LOW); // Get pulse length of tachometer pulse, from this we can derive the fan speed
-    freq = 1000000 / tach / 2;
-    rpm = (freq / registerMap[FAN_TACH_DIVIDER]) * 60;
+    if(tach>0 && registerMap[FAN_TACH_DIVIDER] > 0){
+      freq = 1000000 / tach / 2;
+      rpm = (freq / registerMap[FAN_TACH_DIVIDER]) * 60;
+    }else{
+      rpm = 0;
+    }
 
     registerMap[FAN_ACTUAL_RPM] = uint16_t(rpm) >> 8;
     registerMap[FAN_ACTUAL_RPM + 0x01] = uint16_t(rpm);
@@ -383,9 +391,9 @@ void pwmWidth(int width)
 ****************************************************/
 void requestEvent()
 {
-  for(uint8_t idx = 0; idx < sizeof(registerMap); idx++)
+  for(uint8_t idx = registerIndex; idx < sizeof(registerMap); idx++)
   {
-    Wire.write(registerMap[registerIndex+idx]);
+    Wire.write(registerMap[idx]);
   }
 }
 
@@ -432,7 +440,8 @@ void receiveEvent(int bytesReceived)
         // load received bytes into consecutive register addresses
         for (int i = 0; i < bytesReceived - 1; i++)
         {
-            registerMap[receivedCommands[0] + i] = receivedCommands[1 + i];
+            registerMap[(receivedCommands[0] + i)%sizeof(registerMap)] = receivedCommands[1 + i];
+            
         }
         changeFlag = 1; // Set the change flag
     }
